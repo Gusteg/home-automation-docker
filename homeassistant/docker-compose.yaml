@@ -1,0 +1,27 @@
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: "ghcr.io/home-assistant/home-assistant:stable"
+    volumes:
+      - ./config:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+    restart: always
+    privileged: true
+    expose:
+     - 8123
+    ports:
+     - "8123:8123"
+    networks:
+     - traefik
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.homeassistant.rule=Host(`${PUBLIC_HOST}`) || Host(`${LOCAL_HOST}`)"
+      - "traefik.http.routers.homeassistant.entrypoints=web,websecure"
+      - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
+      - "traefik.http.routers.homeassistant.middlewares=cloudflare-whitelist@file"
+networks:
+  traefik:
+    external: true

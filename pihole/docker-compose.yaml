@@ -1,0 +1,32 @@
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    ports:
+      # DNS Ports (exposed directly to host, NOT via Traefik)
+      - "53:53/tcp"
+      - "53:53/udp"
+    environment:
+      TZ: 'Europe/Warsaw'
+      FTLCONF_webserver_api_password: ${PIHOLE_PASS}
+      FTLCONF_dns_listeningMode: 'all'
+    volumes:
+      - './etc-pihole:/etc/pihole'
+      - './etc-dnsmasq.d:/etc/dnsmasq.d'
+    cap_add:
+      - NET_ADMIN
+      - SYS_TIME
+      - SYS_NICE
+    restart: always
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pihole.rule=Host(`${PUBLIC_HOST}`) || Host(`${LOCAL_HOST}`)"
+      - "traefik.http.routers.pihole.entrypoints=web,websecure"
+      - "traefik.http.services.pihole.loadbalancer.server.port=80"
+      - "traefik.http.routers.pihole.middlewares=cloudflare-whitelist@file"
+networks:
+  traefik:
+    external: true
+

@@ -1,0 +1,32 @@
+services:
+  reverse-proxy:
+    image: traefik:v3.3
+    command:
+      - --api.insecure=true
+      - --providers.docker
+      - --entryPoints.web.address=:80
+      - --entryPoints.websecure.address=:443
+    networks:
+      - traefik
+    environment:
+      - CF_DNS_API_TOKEN=${CLOUDFLARE_DNS_TOKEN}
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config/traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ./config/dynamic_conf.yaml:/etc/traefik/dynamic_conf.yml:ro
+      - ./data/certs/:/var/traefik/certs/:rw
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`${LOCAL_HOST}`)"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      - "traefik.http.routers.traefik.middlewares=local-ip-ranges@file"
+
+networks:
+  traefik:
+    external: true
+

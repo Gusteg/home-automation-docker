@@ -1,0 +1,22 @@
+services:
+  portainer:
+    image: portainer/portainer-ce:latest
+    volumes:
+      - data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - traefik
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer-https.rule=Host(`${PUBLIC_HOST}`) || Host(`${LOCAL_HOST}`)"
+      - "traefik.http.routers.portainer-https.entrypoints=websecure,web"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+      - "traefik.http.routers.portainer-https.middlewares=cloudflare-whitelist@file"
+
+volumes:
+  data:
+networks:
+  traefik:
+    external: true
+
